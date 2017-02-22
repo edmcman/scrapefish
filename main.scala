@@ -18,9 +18,15 @@ object Main {
        	   val browser = new WebClient(BrowserVersion.CHROME)
 	   browser.getOptions().setThrowExceptionOnScriptError(false)
 	   val page:HtmlPage = browser.getPage("https://www.snapfish.com/photo-gift/loginto")
-	   println(page.getForms.asScala.map(_.getNameAttribute()))
-	   println(page.getForms.asScala.map(_.asXml()))
-	   println(page.getForms.asScala.tail.asXml())
+
+	   // The main login form is 'form1'
+	   val form = page.getFormByName("form1")
+	   println(form.asXml())
+
+	   // input name = EmailAddress
+	   // input name = Password
+	   // click link 'Sign In'
+
 	   //val form = doc >> text("form")
 	   //println(form)
        }
