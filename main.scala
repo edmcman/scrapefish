@@ -1,7 +1,7 @@
 import collection.JavaConverters._
 
 import com.gargoylesoftware.htmlunit.WebClient
-import com.gargoylesoftware.htmlunit.html.HtmlPage
+import com.gargoylesoftware.htmlunit.html.{HtmlPage,HtmlAnchor,HtmlTextInput,HtmlPasswordInput}
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 
@@ -13,22 +13,25 @@ import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
 import net.ruippeixotog.scalascraper.model.Element
 
 object Main {
-       def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = {
 
-       	   val browser = new WebClient(BrowserVersion.CHROME)
-	   browser.getOptions().setThrowExceptionOnScriptError(false)
-	   val page:HtmlPage = browser.getPage("https://www.snapfish.com/photo-gift/loginto")
+    val browser = new WebClient(BrowserVersion.CHROME)
+    browser.getOptions().setThrowExceptionOnScriptError(false)
+    var page:HtmlPage = browser.getPage("https://www.snapfish.com/photo-gift/loginto")
 
-	   // The main login form is 'form1'
-	   val form = page.getFormByName("form1")
-	   println(form.asXml())
+    // The main login form is 'form1'
+    val form = page.getFormByName("form1")
+    println(form.asXml())
 
-	   // input name = EmailAddress
-	   // input name = Password
-	   // click link 'Sign In'
+    //form.getChildren.asScala.foreach(println(_))
 
-	   //val form = doc >> text("form")
-	   //println(form)
-       }
+    val email:HtmlTextInput = form.getInputByName("EmailAddress")
+    email.setText("test@email.com")
+    val password:HtmlPasswordInput = form.getInputByName("Password")
+    password.setText("testpass")
+    page = password.`type`('\n').asInstanceOf[HtmlPage]
+    println(page.asText())
+
+  }
 }
 
