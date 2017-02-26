@@ -5,19 +5,22 @@ import com.gargoylesoftware.htmlunit.html.{HtmlPage,HtmlAnchor,HtmlTextInput,Htm
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 
-import net.ruippeixotog.scalascraper.browser.JsoupBrowser
-import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
-import net.ruippeixotog.scalascraper.dsl.DSL._
-import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
-import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
-import net.ruippeixotog.scalascraper.model.Element
+// import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+// import net.ruippeixotog.scalascraper.browser.HtmlUnitBrowser
+// import net.ruippeixotog.scalascraper.dsl.DSL._
+// import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
+// import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
+// import net.ruippeixotog.scalascraper.model.Element
 
 object Main {
   def main(args: Array[String]): Unit = {
 
+    val email = args(0)
+    val pass = args(1)
+
     val browser = new WebClient(BrowserVersion.CHROME)
     browser.getOptions().setThrowExceptionOnScriptError(false)
-    var page:HtmlPage = browser.getPage("https://www.snapfish.com/photo-gift/loginto")
+var page:HtmlPage = browser.getPage("https://www.snapfish.com/photo-gift/loginto")
 
     // The main login form is 'form1'
     val form = page.getFormByName("form1")
@@ -25,11 +28,15 @@ object Main {
 
     //form.getChildren.asScala.foreach(println(_))
 
-    val email:HtmlTextInput = form.getInputByName("EmailAddress")
-    email.setText("test@email.com")
-    val password:HtmlPasswordInput = form.getInputByName("Password")
-    password.setText("testpass")
-    page = password.`type`('\n').asInstanceOf[HtmlPage]
+    val emailfield:HtmlTextInput = form.getInputByName("EmailAddress")
+    emailfield.setText(email)
+    val passfield:HtmlPasswordInput = form.getInputByName("Password")
+    passfield.setText(pass)
+    page = passfield.`type`('\n').asInstanceOf[HtmlPage]
+
+    println(page.getByXPath("""//a[@id = "myPhotosBtn"]""").asScala.head.asInstanceOf[HtmlAnchor].asXml())
+    page = page.getByXPath("""//a[@id = "myPhotosBtn"]""").asScala.head.asInstanceOf[HtmlAnchor].click()
+
     println(page.asText())
 
   }
