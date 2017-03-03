@@ -7,7 +7,8 @@ var casper = require("casper").create({
     },
     onError: function(msg, backtrace) {
         this.capture('error.png');
-        throw new ErrorFunc("fatal", "error", "filename", backtrace, msg);
+	console.log("ERROR: " + msg + backtrace);
+        //throw new ErrorFunc("fatal", "error", "filename", backtrace, msg);
     }
 });
 
@@ -19,6 +20,9 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
         'EmailAddress':    email,
 	'Password': password
     }, true);
+    this.page.OnConsoleMessage = function(msg, lineNum, sourceId) {
+	console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
+    };
     this.page.onFileDownload = function(status) {
 	console.log("onFileDownload " + status);
 	return "test.zip";
@@ -33,6 +37,15 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
 	console.log("A new child page was created, yay!");
     };
 });
+
+var utils = require('utils');
+
+casper.options.onResourceRequested = function(C, requestData, request) {
+    utils.dump(requestData);
+};
+casper.options.onResourceReceived = function(C, response) {
+    utils.dump(response);
+};
 
 //casper.thenOpen("https://github.com/edmcman/covize/archive/master.zip");
 
@@ -55,16 +68,10 @@ function downloadImage(image) {
 	this.capture("pic.png");
 	this.page.onFileDownload = function(status) { console.log('onfiledownload ' + status); };
 	casper.echo("Clicking now...");
-	this.click("li.download.detail-download");
-	casper.echo("Clicking now... a");
-	this.click("li.download.detail-download a");
-	casper.echo("Clicking now... b");
-	this.click("li.download.detail-download span");
-	casper.echo("Clicking now... c");
-	//this.click("li.download.detail-download bullshit");
-	//casper.echo("Clicking now... d");
-	//this.click("waaaaaat");
-	//casper.echo("Clicking now... e");
+	//this.click("li.download.detail-download", "50%", "50%");
+	//this.click("li.download.detail-download a");
+	//this.click("li.download.detail-download span", "50%", "50%");
+	this.click(x('//li[@class="download"]'));
 	this.wait(10000);
     });
     casper.then(function() {
