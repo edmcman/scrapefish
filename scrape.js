@@ -20,7 +20,10 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
         'EmailAddress':    email,
 	'Password': password
     }, true);
-    this.page.OnConsoleMessage = function(msg, lineNum, sourceId) {
+    this.page.onPageCreated = function(newPage) {
+	console.log('New page!!! ' + newPage);
+    };
+    this.page.onConsoleMessage = function(msg, lineNum, sourceId) {
 	console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
     };
     this.page.onFileDownload = function(status) {
@@ -47,6 +50,14 @@ casper.options.onResourceReceived = function(C, response) {
     utils.dump(response);
 };
 
+casper.on("remote.message", function(msg) {
+    this.echo("remote: " + msg);
+});
+
+casper.on("popup.created", function() {
+    this.echo("url popup created!");
+});
+
 //casper.thenOpen("https://github.com/edmcman/covize/archive/master.zip");
 
 casper.wait(10000);
@@ -67,17 +78,19 @@ function downloadImage(image) {
     casper.then(function() {
 	this.capture("pic.png");
 	this.page.onFileDownload = function(status) { console.log('onfiledownload ' + status); };
-	casper.echo("Clicking now...");
+	casper.echo("Clicking now...\n\n");
 	//this.click("li.download.detail-download", "50%", "50%");
 	//this.click("li.download.detail-download a");
 	//this.click("li.download.detail-download span", "50%", "50%");
-	this.click(x('//li[@class="download"]'));
-	this.wait(10000);
+	//this.click(x('//li[@class="download"]'));
     });
-    casper.then(function() {
-	this.capture("debug.png");
-	this.echo("done...");
+    casper.thenEvaluate(function() {
+	$("li.download").click();
+	console.log("This is an evaluation!\n\n\n\n");
+	console.log(photoOrg);
+	photoOrg.jsErrorLogger("oh noes");
     });
+    casper.wait(10000);
 };
 
 function processAlbum(caption) {
