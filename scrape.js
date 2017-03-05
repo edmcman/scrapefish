@@ -13,12 +13,14 @@ var casper = require("casper").create({
 });
 
 var fs = require('fs');
+var utils = require('utils');
 
 var email = casper.cli.get("email")
 var password = casper.cli.get("password")
 
 var downloaded = false;
 
+ 
 casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
     this.fill('form#form1', {
         'EmailAddress':    email,
@@ -50,8 +52,6 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
     // };
 });
 
-var utils = require('utils');
- 
 // casper.options.onResourceReceived = function(C, response) {
 //     if (response.stage != "end" || !response.bodySize) return;
 
@@ -110,33 +110,52 @@ function processAlbum(caption) {
     });
 };
 
+function processYear(year) {
+    this.echo("Downloading year " + year);
+    var months = this.evaluate(function(year) { return $("div.monthbar div.left h2 small:contains(" + year + ").parent"); });
+    util.dump(months);
+}
+
 function sleep( sleepDuration ){
     var now = new Date().getTime();
     while(new Date().getTime() < now + sleepDuration){ /* do nothing */ }
 }
-casper.wait(10000);
-casper.then(function() {
-    while (true) {
-	var initial = casper.evaluate(function() { return $("div#right-well")[0].scrollTop; });
-	//casper.evaluate(function() { $("div#right-well")[0].scrollTop = $("div#right-well")[0].scrollHeight + 1; });
+
+for (var i = 0; i < 10; i++) {
+    casper.then(function() {
 	casper.evaluate(function() { $("div#right-well").scrollTop(100000); });
-	this.echo("sleeping");
-	sleep(10000);
-	var upd = casper.evaluate(function() { return $("div#right-well")[0].scrollTop; });
-	this.echo("hmmm " + initial + " new " + upd + "\n");
-	//if (initial == upd) break;
-    }
-
-    casper.echo("Looking at my photos.");
-    var albums = this.getElementsInfo("p.storyCaption").map(function(x) {
-	return x.attributes.o_caption;
     });
-    require('utils').dump(albums);
+    // XXX: Replace this with a waitForResource, or ensure the scroll thing goes away
+    casper.wait(10000);
+}
 
-    processAlbum(albums[0]);
-	// click the first one
-	
-	// this.click("p[o_caption=Winter]");
+function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+}
+
+casper.then(function() {    
+    casper.echo("Looking at my photos.");
+    var years = this.getElementsInfo("div.monthbar div.left h2 small").map(function(x) x.text ).filter(onlyUnique);
+
+    // I only care about years between 2002 and 2006
+    years = years.filter(function(x) x >= 2002 && x <= 2006);
+    utils.dump(years);
+
+    years.forEach(function(year) processYear.call(this, year));
+
+    processYear.call(this, 2006);
+    
+    this.echo("oh...");
+    
+    //var monthsrequire('utils').dump(this.getElementsInfo("div.monthbar div.left h2").map(function(x) { x.text }));
+
+
+    // var albums = this.getElementsInfo("p.storyCaption").map(function(x) {
+    // 	return x.attributes.o_caption;
+    // });
+    // require('utils').dump(albums);
+
+    // processAlbum(albums[0]);
 	
 });
 
@@ -148,6 +167,6 @@ casper.then(function() {
 // });
 
 casper.run(function() {
-    console.log("cool");
+    console.log("Exiting");
     this.exit();
 });
