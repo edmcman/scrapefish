@@ -112,8 +112,9 @@ function processAlbum(caption) {
 
 function processYear(year) {
     this.echo("Downloading year " + year);
-    var months = this.evaluate(function(year) { return $("div.monthbar div.left h2 small:contains(" + year + ").parent"); });
-    util.dump(months);
+    //var months = this.evaluate(function(year) { return $('div.monthbar div.left h2 small'); });
+    var months = this.evaluate(function(year) { return $('div.monthbar div.left h2 small:contains(' + year + ')').parent().map(function() {return $(this).text()}).toArray(); }, year);
+    utils.dump(months);
 }
 
 function sleep( sleepDuration ){
@@ -121,12 +122,24 @@ function sleep( sleepDuration ){
     while(new Date().getTime() < now + sleepDuration){ /* do nothing */ }
 }
 
-for (var i = 0; i < 10; i++) {
-    casper.then(function() {
-	casper.evaluate(function() { $("div#right-well").scrollTop(100000); });
-    });
-    // XXX: Replace this with a waitForResource, or ensure the scroll thing goes away
+
+for (var i = 0; i < /*10*/1; i++) {
     casper.wait(10000);
+    casper.then(function() {
+     	casper.echo("Scrolling...");
+    	//	casper.evaluate(function() { $("div#right-well").scrollTop($("div#right-well").scrollTop()+400); });
+    	casper.evaluate(function() { $("div#right-well").scrollTop(10000); });
+    	casper.echo("Waiting for loading bar to go away...");
+    	casper.evaluate(function() { console.log("loading bar? " + $("bottomLoadingBar").isOnScreen()); });
+    });
+
+    if (false)
+	// Ugh. Why doesn't htis work?  IT returns undefined!
+	casper.waitFor(function() {
+     	    this.evaluate(function() { ! $("#bottomLoadingBar").isOnScreen(); });
+	}, null, null, 20000);
+    else casper.wait(20000);
+
 }
 
 function onlyUnique(value, index, self) {
@@ -138,15 +151,11 @@ casper.then(function() {
     var years = this.getElementsInfo("div.monthbar div.left h2 small").map(function(x) x.text ).filter(onlyUnique);
 
     // I only care about years between 2002 and 2006
-    years = years.filter(function(x) x >= 2002 && x <= 2006);
+    //years = years.filter(function(x) x >= 2002 && x <= 2006);
     utils.dump(years);
 
-    years.forEach(function(year) processYear.call(this, year));
+    years.forEach(processYear, this);
 
-    processYear.call(this, 2006);
-    
-    this.echo("oh...");
-    
     //var monthsrequire('utils').dump(this.getElementsInfo("div.monthbar div.left h2").map(function(x) { x.text }));
 
 
