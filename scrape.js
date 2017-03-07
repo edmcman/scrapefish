@@ -18,6 +18,10 @@ var utils = require('utils');
 var email = casper.cli.get("email")
 var password = casper.cli.get("password")
 
+if (!(email && password)) {
+    throw "Define an email and password";
+}
+
 var downloaded = false;
 
  
@@ -95,10 +99,10 @@ function downloadImage(image) {
     });
 };
 
-function processAlbum(caption) {
+function processAlbum(month, year, caption) {
     casper.echo("Processing " + caption);
     casper.then(function() {
-	this.click("p[o_caption='" + caption + "']");
+	this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
 	this.wait(10000, function() {
 	    //this.capture("test.png");
 	    var pics = this.getElementsInfo("div.selectable-asset").map(function(x) {
@@ -110,11 +114,47 @@ function processAlbum(caption) {
     });
 };
 
+function processMonth(month, year) {
+    this.echo("Downloading month " + month + " of year " + year);
+
+    var albums;
+    try {
+	albums = this.getElementsInfo('div[presentmonth="' + year + '-' + month + '"] p.storyCaption');
+    } catch(err) {
+	albums = [];
+    }
+
+    utils.dump(albums);
+
+};
+
 function processYear(year) {
     this.echo("Downloading year " + year);
     //var months = this.evaluate(function(year) { return $('div.monthbar div.left h2 small'); });
-    var months = this.evaluate(function(year) { return $('div.monthbar div.left h2 small:contains(' + year + ')').parent().map(function() {return $(this).text()}).toArray(); }, year);
-    utils.dump(months);
+
+    [1,2,3,4,5,6,7,8,9,10,11,12].forEach(function (month) {
+
+	this.echo("Downloading month " + month + " of year " + year);
+
+	var albums;
+	try {
+	    albums = this.getElementsInfo('div[presentmonth="' + year + '-' + month + '"] p.storyCaption').map(function(x) { return x.attributes.o_caption; });
+	} catch(err) {
+	    albums = [];
+	}
+
+	utils.dump(albums);
+
+	albums.forEach(function(album) { processAlbum(month, year, album); });
+
+    }, this);
+	
+
+    //processMonth(month, year) }, this);
+    
+    //var albums = this.getElementsInfo('div');
+
+    // var months = this.evaluate(function(year) { return $('div.monthbar div.left h2 small:contains(' + year + ')').parent().map(function() {return $(this).text()}).toArray(); }, year);
 }
 
 function sleep( sleepDuration ){
@@ -152,17 +192,17 @@ casper.then(function() {
 
     // I only care about years between 2002 and 2006
     //years = years.filter(function(x) x >= 2002 && x <= 2006);
-    utils.dump(years);
+    //utils.dump(years);
 
     years.forEach(processYear, this);
-
+    
     //var monthsrequire('utils').dump(this.getElementsInfo("div.monthbar div.left h2").map(function(x) { x.text }));
 
 
-    // var albums = this.getElementsInfo("p.storyCaption").map(function(x) {
-    // 	return x.attributes.o_caption;
-    // });
-    // require('utils').dump(albums);
+    //var albums = this.getElementsInfo("p.storyCaption"); //.map(function(x) {
+//     	return [x.attributes.o_caption, x.;
+  //  });
+    //require('utils').dump(albums);
 
     // processAlbum(albums[0]);
 	
