@@ -132,6 +132,8 @@ function processYear(year) {
     this.echo("Downloading year " + year);
     //var months = this.evaluate(function(year) { return $('div.monthbar div.left h2 small'); });
 
+    var r = [];
+    
     [1,2,3,4,5,6,7,8,9,10,11,12].forEach(function (month) {
 
 	this.echo("Downloading month " + month + " of year " + year);
@@ -143,12 +145,17 @@ function processYear(year) {
 	    albums = [];
 	}
 
-	utils.dump(albums);
+	//utils.dump(albums);
 
-	albums.forEach(function(album) { processAlbum(month, year, album); });
+	//albums.forEach(function(album) { processAlbum(month, year, album); });
 
-    }, this);
+	albums.forEach(function(album) { r = r.concat([[month, year, album]]); });
 	
+    }, this);
+
+    //utils.dump(r);
+    
+    return r;
 
     //processMonth(month, year) }, this);
     
@@ -194,7 +201,9 @@ casper.then(function() {
     //years = years.filter(function(x) x >= 2002 && x <= 2006);
     //utils.dump(years);
 
-    years.forEach(processYear, this);
+    var albums = [].concat.apply([], years.map(processYear, this));
+
+    utils.dump(albums);
     
     //var monthsrequire('utils').dump(this.getElementsInfo("div.monthbar div.left h2").map(function(x) { x.text }));
 
