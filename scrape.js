@@ -176,13 +176,11 @@ casper.then(function() {
 });
 
 var i = -1;
-for (var j = 0; j < MAXALBUMS; j++) {
-    casper.then(function() {
-	if (i++ < albums.length) {
-	    processAlbum.call(this, albums[i][0], albums[i][1], albums[i][2]);
-	}
-    });
-};
+casper.repeat(MAXALBUMS, function() {
+    if (i++ < albums.length) {
+	processAlbum.call(this, albums[i][0], albums[i][1], albums[i][2]);
+    }
+});
 
 
 casper.run(function() {
