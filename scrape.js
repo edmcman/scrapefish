@@ -1,6 +1,6 @@
 var casper = require("casper").create({
     verbose: true,
-    logLevel: 'debug',
+    //logLevel: 'debug',
     viewportSize: {
 	width: 1920,
 	height: 1080
@@ -77,11 +77,28 @@ function downloadImage(image) {
 function processAlbum(month, year, caption) {
     casper.echo("Processing album " + caption);
     this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
+
+    for (var i = 0; i < 10; i++) {
+	this.wait(10000, function() {
+	    var vispics = this.getElementsInfo("div.selectable-asset img")
+		.filter(function(x) { return !(x.attributes.src.includes("base64")); });
+		//.map(function(x) { return x.attributes.src;
+	    this.echo("pics");
+	    require('utils').dump(vispics);
+     	    this.echo("Scrolling...");
+    	    this.evaluate(function() { $("div.scroll_sav_grid").scrollTop(10000); });
+	    // XXX: Detect when we get to the bottom...
+	});
+    }
+
+
+
     this.wait(10000, function() {
 
-	var pics = this.getElementsInfo("div.selectable-asset").map(function(x) {
-	    return x.attributes.id;
+	var pics = this.getElementsInfo("div.selectable-asset img").map(function(x) {
+	    return x.attributes.src;
 	});
+	this.echo("pics");
 	require('utils').dump(pics);
 
 	this.click("a#globalHeaderMyPhotos");
@@ -137,7 +154,6 @@ function loadMyPhotos() {
 	for (var i = 0; i < /*10*/1; i++) {
 	    this.wait(10000, function() {
      		this.echo("Scrolling...");
-    	    //	casper.evaluate(function() { $("div#right-well").scrollTop($("div#right-well").scrollTop()+400); });
     		this.evaluate(function() { $("div#right-well").scrollTop(10000); });
     		this.echo("Waiting for loading bar to go away...");
     		this.evaluate(function() { console.log("loading bar? " + $("bottomLoadingBar").isOnScreen()); });
