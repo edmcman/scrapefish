@@ -25,7 +25,7 @@ if (!(email && password)) {
 }
 
 var downloaded = false;
-
+var dir = "";
  
 casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
     this.fill('form#form1', {
@@ -42,7 +42,7 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
 	utils.dump(responseData);
 	console.log('YEAH downloading');
 	downloaded = true;
-	return responseData.filename;
+	return dir + responseData.filename;
     };
 });
 
@@ -76,6 +76,9 @@ function downloadImage(image) {
 
 function processAlbum(month, year, caption) {
     casper.echo("Processing album " + caption);
+
+    dir = month + "/" + year + "/" + caption + "/";
+
     this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
 
     for (var i = 0; i < 10; i++) {
@@ -84,7 +87,7 @@ function processAlbum(month, year, caption) {
 		.filter(function(x) { return !(x.attributes.src.includes("base64")); })
 		.map(function(x) { return x.attributes.id.replace("img_", ""); });
 	    this.echo("pics");
-	    require('utils').dump(vispics);
+	    utils.dump(vispics);
 	    // Get the id, remove img_, and look for the div with that id.
 	    // Click div.click-on-asset if id div does not contain selected class
 	    vispics.forEach(function(id) {
@@ -96,22 +99,21 @@ function processAlbum(month, year, caption) {
 	    }, this);
      	    this.echo("Scrolling...");
     	    this.evaluate(function() { $("div.scroll_sav_grid").scrollTop(10000); });
+	    this.evaluate(function() { console.log($("div.scroll_sav_grid").scrollTop()); });
 	    // XXX: Detect when we get to the bottom...
 	});
+
     }
 
-
-
-    this.wait(10000, function() {
-
-	var pics = this.getElementsInfo("div.selectable-asset img").map(function(x) {
-	    return x.attributes.src;
-	});
-	this.echo("pics");
-	require('utils').dump(pics);
-
+    // We've clicked all the pics, time to download.
+    this.wait(1000, function() { this.evaluate(function() { $("#bulkDownload").click(); }); });
+    this.wait(120000, function() {
+	downloaded = false;
+	// XXX: How do we know when we're done downloading?
+	// Deselect pictures
+	this.click("span.close_selected_assets");
 	this.click("a#globalHeaderMyPhotos");
-	loadMyPhotos();
+	loadMyPhotos();	
     });
 
 };
