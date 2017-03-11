@@ -81,10 +81,19 @@ function processAlbum(month, year, caption) {
     for (var i = 0; i < 10; i++) {
 	this.wait(10000, function() {
 	    var vispics = this.getElementsInfo("div.selectable-asset img")
-		.filter(function(x) { return !(x.attributes.src.includes("base64")); });
-		//.map(function(x) { return x.attributes.src;
+		.filter(function(x) { return !(x.attributes.src.includes("base64")); })
+		.map(function(x) { return x.attributes.id.replace("img_", ""); });
 	    this.echo("pics");
 	    require('utils').dump(vispics);
+	    // Get the id, remove img_, and look for the div with that id.
+	    // Click div.click-on-asset if id div does not contain selected class
+	    vispics.forEach(function(id) {
+		// utils.dump(this.getElementInfo("div[id=\"" + id + "\"]"));
+		if (!this.getElementInfo("div[id=\"" + id + "\"]").attributes.class.includes("selected")) {
+		    this.echo(id + " is unselected, going to click it");
+		    this.click("div[id=\"" + id + "\"] div.click-on-asset");
+		}
+	    }, this);
      	    this.echo("Scrolling...");
     	    this.evaluate(function() { $("div.scroll_sav_grid").scrollTop(10000); });
 	    // XXX: Detect when we get to the bottom...
