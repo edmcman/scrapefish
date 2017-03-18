@@ -106,10 +106,10 @@ casper.on("resource.received", function(resource) {
 //     });
 // };
 
-function scrollToBottomOfSelector(selector, wait_ms=10000, max_scrolls=MAXSCROLLS, waitfunc=function() {}) {
+function scrollToBottomOfSelector(selector, wait_ms=10000, max_scrolls=MAXSCROLLS, ensurebottom=true, waitfunc=function() {}) {
+    var atBottom = false;
     casper.then(function() {
 	this.echo("I am executing scrollToBottom here!");
-	var atBottom = false;
     });
     casper.repeat(max_scrolls, function() {
 	this.waitFor(
@@ -133,9 +133,9 @@ function scrollToBottomOfSelector(selector, wait_ms=10000, max_scrolls=MAXSCROLL
 	    wait_ms);
     });
     casper.then(function() {
-	evaluateOrDie(function() {
-	    return atBottom;
-	});
+	if (ensurebottom && !atBottom) {
+	    this.die("Failed to reach bottom of " + selector);
+	}
     });
 }
 
@@ -264,23 +264,8 @@ function sleep( sleepDuration ){
 }
 
 function loadMyPhotos() {
-    scrollToBottomOfSelector("div#right-well");
-	// for (var i = 0; i < /*10*/1; i++) {
-	//     this.wait(10000, function() {
-     	// 	this.echo("Scrolling...");
-    	// 	this.evaluate(function() { $("div#right-well").scrollTop(10000); });
-    	// 	this.echo("Waiting for loading bar to go away...");
-    	// 	this.evaluate(function() { console.log("loading bar? " + $("bottomLoadingBar").isOnScreen()); });
-	//     });
-
-	//     if (false)
-	// 	// Ugh. Why doesn't htis work?  IT returns undefined!
-	// 	this.waitFor(function() {
-     	// 	    this.evaluate(function() { ! $("#bottomLoadingBar").isOnScreen(); });
-	// 	}, null, null, 20000);
-	//     else this.wait(20000);
-	
-	// }
+    // XXX: Scroll to bottom
+    scrollToBottomOfSelector("div#right-well", 10000, 0, false);
 };
 
 function onlyUnique(value, index, self) {
