@@ -84,10 +84,6 @@ casper.on("resource.received", function(resource) {
     }
 });
 
-casper.waitForSelector("a#myPhotosBtn", null, null, 10000).then(function() {
-    this.echo("Logged in.  Clicking on my photos button now.");
-    this.click("a#myPhotosBtn");
-});
 
 // function downloadImage(image) {
 //     casper.echo("Downloading image " + image);
@@ -109,6 +105,39 @@ casper.waitForSelector("a#myPhotosBtn", null, null, 10000).then(function() {
 // 	this.click("li.close.single");
 //     });
 // };
+
+function scrollToBottomOfSelector(selector, wait_ms=10000, max_scrolls=MAXSCROLLS, waitfunc=function() {}) {
+    casper.then(function() {
+	this.echo("I am executing scrollToBottom here!");
+	var atBottom = false;
+    });
+    casper.repeat(max_scrolls, function() {
+	this.waitFor(
+	    function check() {
+		return atBottom;
+	    },
+	    function thenf() {
+		this.echo("Not scrolling because we are at bottom");
+	    },
+	    function timeoutf() {
+		this.echo("Scrolling");
+		atBottom = this.evaluate(function(selector) {
+		    var orig = $(selector).scrollTop();
+		    $(selector).scrollTop(100000);
+		    //waitfunc.call(this);
+		    var newy = $(selector).scrollTop();
+		    console.log("scrolling old: " + orig + " new: " + newy);
+		    return orig === newy;
+		}, selector);
+	    },
+	    wait_ms);
+    });
+    casper.then(function() {
+	evaluateOrDie(function() {
+	    return atBottom;
+	});
+    });
+}
 
 function processAlbum(month, year, caption) {
     casper.echo("Processing album " + caption);
@@ -235,26 +264,24 @@ function sleep( sleepDuration ){
 }
 
 function loadMyPhotos() {
-    casper.then(function() {
-	for (var i = 0; i < /*10*/1; i++) {
-	    this.wait(10000, function() {
-     		this.echo("Scrolling...");
-    		this.evaluate(function() { $("div#right-well").scrollTop(10000); });
-    		this.echo("Waiting for loading bar to go away...");
-    		this.evaluate(function() { console.log("loading bar? " + $("bottomLoadingBar").isOnScreen()); });
-	    });
+    scrollToBottomOfSelector("div#right-well");
+	// for (var i = 0; i < /*10*/1; i++) {
+	//     this.wait(10000, function() {
+     	// 	this.echo("Scrolling...");
+    	// 	this.evaluate(function() { $("div#right-well").scrollTop(10000); });
+    	// 	this.echo("Waiting for loading bar to go away...");
+    	// 	this.evaluate(function() { console.log("loading bar? " + $("bottomLoadingBar").isOnScreen()); });
+	//     });
 
-	    if (false)
-		// Ugh. Why doesn't htis work?  IT returns undefined!
-		this.waitFor(function() {
-     		    this.evaluate(function() { ! $("#bottomLoadingBar").isOnScreen(); });
-		}, null, null, 20000);
-	    else this.wait(20000);
+	//     if (false)
+	// 	// Ugh. Why doesn't htis work?  IT returns undefined!
+	// 	this.waitFor(function() {
+     	// 	    this.evaluate(function() { ! $("#bottomLoadingBar").isOnScreen(); });
+	// 	}, null, null, 20000);
+	//     else this.wait(20000);
 	
-	}
-    });
+	// }
 };
-loadMyPhotos();
 
 function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
@@ -262,6 +289,12 @@ function onlyUnique(value, index, self) {
 
 var albums = [];
 
+casper.waitForSelector("a#myPhotosBtn", null, null, 10000).then(function() {
+    this.echo("Logged in.  Clicking on my photos button now.");
+    this.click("a#myPhotosBtn");
+});
+casper.wait(10000);
+loadMyPhotos();
 casper.then(function() {    
     casper.echo("Looking at my photos.");
     var years = this.getElementsInfo("div.monthbar div.left h2 small").map(function(x) x.text ).filter(onlyUnique);
