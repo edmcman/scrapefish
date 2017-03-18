@@ -27,7 +27,6 @@ if (!(email && password)) {
 }
 
 var downloadingurls = [];
-var numresources = 0;
 var downloaded = false;
 var dir = "";
  
@@ -173,23 +172,24 @@ function processAlbum(month, year, caption) {
 
     this.waitFor(
 	function() {
-	    return (downloaded && downloadingurls.length == 0);
+	    if (downloaded && downloadingurls.length == 0) {
+		// Uh, this is a terrible hack for casperjs...
+		casper.navigationRequested = false;
+		return true;
+	    }
 	},
 	function() {
 	    // Deselect pictures
 	    this.echo("Download finished!");
 	    this.click("span.close_selected_assets");
 	    this.click("a#globalHeaderMyPhotos");
-	    // loadMyPhotos();	
+	    loadMyPhotos();	
 	},
 	function() {
 	    this.die("Download failed");
 	},
 	120000);
 
-    this.then(function() {
-	this.echo("WTF!!!!");
-    });
 };
 
 function processMonth(month, year) {
