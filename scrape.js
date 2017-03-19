@@ -14,7 +14,8 @@ var casper = require("casper").create({
 });
 
 var MAXALBUMS = 30;
-var MAXSCROLLS = 50;
+var MAXSCROLLS = 500;
+var LONGWAIT = 5*60*1000;
 
 var fs = require('fs');
 var utils = require('utils');
@@ -164,7 +165,7 @@ function processAlbum(month, year, caption) {
 	    function check() {
 		var x = this.evaluate(function () { return $("#bottomLoadingBar").is(":visible"); });
 		return !x;
-	    }, null, null, 10000);
+	    }, null, null, LONGWAIT);
 	this.waitFor(
 	    function check() {
 		return numresourcespending == 0 || atBottom;
@@ -174,7 +175,7 @@ function processAlbum(month, year, caption) {
 		    .filter(function(x) { return !(x.attributes.src.includes("base64")); })
 		    .map(function(x) { return x.attributes.id.replace("img_", ""); });
 		this.echo("pics");
-		utils.dump(vispics);
+		//utils.dump(vispics);
 		// Get the id, remove img_, and look for the div with that id.
 		// Click div.click-on-asset if id div does not contain selected class
 		vispics.forEach(function(id) {
@@ -196,7 +197,7 @@ function processAlbum(month, year, caption) {
 	    },
 	    function timeoutf() {
 		this.die("Timed out while scrolling through album");
-	    }, 60000);
+	    }, LONGWAIT);
     });
 
     // We better be at the bottom!
