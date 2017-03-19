@@ -14,7 +14,7 @@ var casper = require("casper").create({
 });
 
 var MAXALBUMS = 30;
-var MAXSCROLLS = 10;
+var MAXSCROLLS = 50;
 
 var fs = require('fs');
 var utils = require('utils');
@@ -140,9 +140,9 @@ function scrollToBottomOfSelector(selector, wait_ms=10000, max_scrolls=MAXSCROLL
 }
 
 function processAlbum(month, year, caption) {
-    casper.echo("Processing album " + caption);
+    this.echo("Processing album " + caption);
 
-    dir = month + "/" + year + "/" + caption + "/";
+    dir = year + "/" + month + "/" + caption + "/";
 
     this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
 
@@ -151,6 +151,7 @@ function processAlbum(month, year, caption) {
     this.waitForSelector("div.scroll_sav_grid");
     
     this.repeat(MAXSCROLLS, function () {
+	this.echo("Scrolling loop");
 	this.waitFor(
 	    function check() {
 		return atBottom;
@@ -176,21 +177,20 @@ function processAlbum(month, year, caption) {
      		this.echo("Scrolling...");
     		atBottom = this.evaluate(function() {
 		    var orig = $("div.scroll_sav_grid").scrollTop();
-		    $("div.scroll_sav_grid").scrollTop(10000);
+		    var height = $("div.scroll_sav_grid").innerHeight();
+		    $("div.scroll_sav_grid").scrollTop(orig + height);
 		    var newy = $("div.scroll_sav_grid").scrollTop();
-		    console.log("old: " + orig + " new: " + newy);
+		    console.log("scroll old: " + orig + " new: " + newy);
 		    return orig === newy;
 		});
 	    }, 10000);
     });
 
     // We better be at the bottom!
-    this.evaluateOrDie(function() {
-	var orig = $("div.scroll_sav_grid").scrollTop();
-	$("div.scroll_sav_grid").scrollTop(10000);
-	var newy = $("div.scroll_sav_grid").scrollTop();
-	console.log("old: " + orig + " new: " + newy);
-	return orig === newy;
+    this.then(function() {
+	if (!atBottom) {
+	    die("We never got to the bottom of the album");
+	}
     });
 
     // We've clicked all the pics, time to download.
@@ -212,6 +212,7 @@ function processAlbum(month, year, caption) {
 	    this.echo("Download finished!");
 	    this.click("span.close_selected_assets");
 	    this.click("a#globalHeaderMyPhotos");
+	    // XXX: This must go outside.
 	    loadMyPhotos();	
 	},
 	function() {
