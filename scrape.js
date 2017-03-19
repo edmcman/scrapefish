@@ -3,8 +3,8 @@ var casper = require("casper").create({
     logLevel: 'debug',
     silentErrors: false,
     viewportSize: {
-	width: 1920,
-	height: 1080
+	width: 1280,
+	height: 700
     },
     onError: function(msg, backtrace) {
 	console.log("ERROR: " + msg + backtrace);
@@ -106,7 +106,7 @@ casper.on("resource.received", function(resource) {
 //     });
 // };
 
-function scrollToBottomOfSelector(selector, wait_ms=10000, max_scrolls=MAXSCROLLS, ensurebottom=true, waitfunc=function() {}) {
+function scrollToBottomOfSelector(selector, wait_ms=30000, max_scrolls=MAXSCROLLS, ensurebottom=true, waitfunc=function() {}) {
     var atBottom = false;
     casper.then(function() {
 	this.echo("I am executing scrollToBottom here!");
@@ -154,6 +154,11 @@ function processAlbum(month, year, caption) {
 	this.echo("Scrolling loop");
 	this.waitFor(
 	    function check() {
+		var x = this.evaluate(function () { return $("#bottomLoadingBar").is(":visible"); });
+		return !x;
+	    }, null, null, 10000);
+	this.waitFor(
+	    function check() {
 		return atBottom;
 	    },
 	    function thenf() {
@@ -178,18 +183,25 @@ function processAlbum(month, year, caption) {
     		atBottom = this.evaluate(function() {
 		    var orig = $("div.scroll_sav_grid").scrollTop();
 		    var height = $("div.scroll_sav_grid").innerHeight();
-		    $("div.scroll_sav_grid").scrollTop(orig + height);
+		    $("div.scroll_sav_grid").scrollTop(orig + height*3/4);
 		    var newy = $("div.scroll_sav_grid").scrollTop();
 		    console.log("scroll old: " + orig + " new: " + newy);
 		    return orig === newy;
 		});
-	    }, 10000);
+	    }, 30000);
     });
 
     // We better be at the bottom!
     this.then(function() {
-	if (!atBottom) {
-	    die("We never got to the bottom of the album");
+	if (!this.evaluate(function() {
+	    var orig = $("div.scroll_sav_grid").scrollTop();
+	    var height = $("div.scroll_sav_grid").innerHeight();
+	    $("div.scroll_sav_grid").scrollTop(orig + height*3/4);
+	    var newy = $("div.scroll_sav_grid").scrollTop();
+	    console.log("scroll old: " + orig + " new: " + newy);
+	    return orig === newy;
+	})) {
+	    this.die("Failed to scroll to the bottom");
 	}
     });
 
