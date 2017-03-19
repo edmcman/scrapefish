@@ -67,12 +67,20 @@ casper.on("step.error", function(step) {
     this.echo("STEP ERROR");
 });
 
-// casper.on("resource.requested", function(resource, request) {
-//     numresources++;
-// });
-// casper.on("resource.timeout", function(resource) {
-//     numresources--;
-// });
+var numresourcespending = 0;
+casper.on("resource.requested", function(resource, request) {
+    numresourcespending++;
+});
+casper.on("resource.timeout", function(resource) {
+    //numresourcespending--;
+    this.echo("resource timeout! " + resource.url);
+});
+casper.on("resource.received", function(resource) {
+    if (resource.stage == "end") {
+	numresourcespending--;
+	this.echo("numresourcespending = " + numresourcespending);
+    }
+});
 casper.on("resource.received", function(resource) {
     if (resource.stage == "end" && downloadingurls.includes(resource.url)) {
 	this.echo("A file finished downloading! " + resource.url);
@@ -159,12 +167,9 @@ function processAlbum(month, year, caption) {
 	    }, null, null, 10000);
 	this.waitFor(
 	    function check() {
-		return atBottom;
+		return numresourcespending == 0 || atBottom;
 	    },
 	    function thenf() {
-		this.echo("Not scrolling because we are at bottom");
-	    },
-	    function timeoutf() {
 		var vispics = this.getElementsInfo("div.selectable-asset img")
 		    .filter(function(x) { return !(x.attributes.src.includes("base64")); })
 		    .map(function(x) { return x.attributes.id.replace("img_", ""); });
@@ -188,7 +193,10 @@ function processAlbum(month, year, caption) {
 		    console.log("scroll old: " + orig + " new: " + newy);
 		    return orig === newy;
 		});
-	    }, 30000);
+	    },
+	    function timeoutf() {
+		this.die("Timed out while scrolling through album");
+	    }, 60000);
     });
 
     // We better be at the bottom!
