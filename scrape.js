@@ -27,8 +27,8 @@ if (!(email && password)) {
     throw "Define an email and password";
 }
 
+var downloadsleft = 42;
 var downloadingurls = [];
-var downloaded = false;
 var dir = "";
  
 casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
@@ -47,7 +47,7 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
 	utils.dump(responseData);
 	console.log('YEAH downloading ' + url);
 	console.log(downloadingurls);
-	downloaded = true;
+	downloadsleft--;
 	return dir + responseData.filename;
     };
 });
@@ -171,9 +171,12 @@ function processAlbum(month, year, caption) {
 		return numresourcespending == 0 || atBottom;
 	    },
 	    function thenf() {
+		if (atBottom) { return; }
 		var vispics = this.getElementsInfo("div.selectable-asset img")
 		    .filter(function(x) { return !(x.attributes.src.includes("base64")); })
 		    .map(function(x) { return x.attributes.id.replace("img_", ""); });
+		// Count the number of pictures, and use this to determine how many downloads to wait for.
+		downloadsleft = (vispics.length + 49) / 50;
 		this.echo("pics");
 		//utils.dump(vispics);
 		// Get the id, remove img_, and look for the div with that id.
@@ -216,13 +219,13 @@ function processAlbum(month, year, caption) {
 
     // We've clicked all the pics, time to download.
     this.wait(1000, function() {
-	downloaded = false;
+	downloadsleft = 42;
 	this.evaluate(function() { $("#bulkDownload").click(); });
     });
 
     this.waitFor(
 	function() {
-	    if (downloaded && downloadingurls.length == 0) {
+	    if (numresourespending == 0 && downloadsleft == 0 && downloadingurls.length == 0) {
 		// Uh, this is a terrible hack for casperjs...
 		casper.navigationRequested = false;
 		return true;
