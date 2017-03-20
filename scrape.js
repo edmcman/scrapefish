@@ -162,6 +162,7 @@ function processAlbum(month, year, caption) {
     var atBottom = false;
 
     this.waitForSelector("div.scroll_sav_grid");
+    downloadsleft = 42;
     
     this.repeat(MAXSCROLLS, function () {
 	this.echo("Scrolling loop");
@@ -180,7 +181,7 @@ function processAlbum(month, year, caption) {
 		    .filter(function(x) { return !(x.attributes.src.includes("base64")); })
 		    .map(function(x) { return x.attributes.id.replace("img_", ""); });
 		// Count the number of pictures, and use this to determine how many downloads to wait for.
-		downloadsleft = (vispics.length + 49) / 50;
+		downloadsleft = Math.floor(vispics.length / 50);
 		this.echo("pics");
 		//utils.dump(vispics);
 		// Get the id, remove img_, and look for the div with that id.
@@ -223,7 +224,6 @@ function processAlbum(month, year, caption) {
 
     // We've clicked all the pics, time to download.
     this.wait(1000, function() {
-	downloadsleft = 42;
 	this.evaluate(function() { $("#bulkDownload").click(); });
     });
 
@@ -292,7 +292,7 @@ function sleep( sleepDuration ){
 
 function loadMyPhotos() {
     // XXX: Scroll to bottom
-    scrollToBottomOfSelector("div#right-well", 10000, 0, false);
+    scrollToBottomOfSelector("div#right-well", 10000, 10, false);
 };
 
 function onlyUnique(value, index, self) {
