@@ -48,6 +48,10 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
 	console.log('YEAH downloading ' + url);
 	console.log(downloadingurls);
 	downloadsleft--;
+	if (downloadsleft == 0) {
+	    // Uh, this is a terrible hack for casperjs...
+	    casper.navigationRequested = false;
+	}
 	return dir + responseData.filename;
     };
 });
@@ -226,8 +230,6 @@ function processAlbum(month, year, caption) {
     this.waitFor(
 	function() {
 	    if (numresourespending == 0 && downloadsleft == 0 && downloadingurls.length == 0) {
-		// Uh, this is a terrible hack for casperjs...
-		casper.navigationRequested = false;
 		return true;
 	    }
 	},
@@ -242,7 +244,7 @@ function processAlbum(month, year, caption) {
 	function() {
 	    this.die("Download failed");
 	},
-	120000);
+	20*60*1000 /* 20 min */);
 
 };
 
