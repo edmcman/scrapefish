@@ -15,6 +15,7 @@ var casper = require("casper").create({
 
 var MAXALBUMS = 30;
 var MAXSCROLLS = 500;
+var MAXPIX = 500;
 var LONGWAIT = 5*60*1000;
 
 var fs = require('fs');
@@ -72,6 +73,8 @@ casper.on("step.error", function(step) {
     this.echo("STEP ERROR");
 });
 
+var imageurl = "ok";
+var imagesuccess = false;
 var numresourcespending = 0;
 casper.on("resource.requested", function(resource, request) {
     numresourcespending++;
@@ -84,6 +87,13 @@ casper.on("resource.received", function(resource) {
     if (resource.stage == "end") {
 	numresourcespending--;
 	this.echo("numresourcespending = " + numresourcespending);
+	
+    }
+});
+casper.on("resource.received", function(resource) {
+    if (resource.stage == "end" && resource.url == imageurl) {
+	imagesuccess = resource.status == 200;
+	this.echo("imagesuccess = " + imagesuccess);
     }
 });
 casper.on("resource.received", function(resource) {
@@ -160,7 +170,34 @@ function processAlbum(month, year, caption) {
     this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
 
     var atBottom = false;
+    var atEnd = false;
 
+    this.echo("magnifying icon is here...");
+    this.waitForSelector("div.magnifying-icon");
+    this.thenClick('div.magnifying-icon');
+    this.waitForSelector("img.detailedViewImg");
+    
+    this.repeat(MAXPIX, function () {
+
+	this.then(function() { this.echo("Waiting for new url..."); });
+	this.then(function() { imageurl = this.evaluate(function() { $("img.detailedViewImg").attr("src"); }); });
+	// this.waitFor(
+	//     function check() {
+	// 	this.echo("omg");
+	// 	var newurl = this.evaluate(function () { $("img.detailedViewImg").attr("src"); });
+	// 	var ret = newurl != imageurl;
+	// 	imageurl = newurl;
+	// 	return ret;
+	//     }, null, null, LONGWAIT);
+	this.then(function() { this.echo("Waiting for resources"); imagesuccess = false; });
+	this.waitFor(
+	    function check() {
+		return numresourcespending == 0 || atEnd;
+	    }, null, null, LONGWAIT);
+	this.then(function() { this.echo("Image there? " + imagesuccess); });
+	this.thenClick("figure.right-nav");
+    });
+    
     this.waitForSelector("div.scroll_sav_grid");
     downloadsleft = 42;
     
@@ -231,6 +268,8 @@ function processAlbum(month, year, caption) {
 	function() {
 	    if (numresourespending == 0 && downloadsleft == 0 && downloadingurls.length == 0) {
 		return true;
+	    } else {
+		this.echo("what " + numresourcespending + " " + downloadsleft + " " + downloadingurls.length);
 	    }
 	},
 	function() {
@@ -292,7 +331,7 @@ function sleep( sleepDuration ){
 
 function loadMyPhotos() {
     // XXX: Scroll to bottom
-    scrollToBottomOfSelector("div#right-well", 10000, 10, false);
+    scrollToBottomOfSelector("div#right-well", 10000, 1, false);
 };
 
 function onlyUnique(value, index, self) {
