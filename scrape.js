@@ -73,7 +73,7 @@ casper.on("step.error", function(step) {
     this.echo("STEP ERROR");
 });
 
-var imageurl = "ok";
+var imageurl = null;
 var imagesuccess = false;
 var numresourcespending = 0;
 casper.on("resource.requested", function(resource, request) {
@@ -86,14 +86,19 @@ casper.on("resource.timeout", function(resource) {
 casper.on("resource.received", function(resource) {
     if (resource.stage == "end") {
 	numresourcespending--;
-	this.echo("numresourcespending = " + numresourcespending);
-	
+	this.echo("numresourcespending = " + numresourcespending);	
     }
 });
 casper.on("resource.received", function(resource) {
+    //this.echo("imageurl = " + imageurl + " resource.url = " + resource.url);
+    //utils.dump(resource);
     if (resource.stage == "end" && resource.url == imageurl) {
+	// They are redirecting us.  Record the new imageurl
+	if (resource.status == 302) {
+	    imageurl = resource.redirectURL;
+	}
 	imagesuccess = resource.status == 200;
-	this.echo("imagesuccess = " + imagesuccess);
+	// this.echo("imagesuccess = " + imagesuccess);
     }
 });
 casper.on("resource.received", function(resource) {
@@ -176,25 +181,40 @@ function processAlbum(month, year, caption) {
     this.waitForSelector("div.magnifying-icon");
     this.thenClick('div.magnifying-icon');
     this.waitForSelector("img.detailedViewImg");
-    
+
     this.repeat(MAXPIX, function () {
 
 	this.then(function() { this.echo("Waiting for new url..."); });
-	this.then(function() { imageurl = this.evaluate(function() { $("img.detailedViewImg").attr("src"); }); });
-	// this.waitFor(
-	//     function check() {
-	// 	this.echo("omg");
-	// 	var newurl = this.evaluate(function () { $("img.detailedViewImg").attr("src"); });
-	// 	var ret = newurl != imageurl;
-	// 	imageurl = newurl;
-	// 	return ret;
-	//     }, null, null, LONGWAIT);
-	this.then(function() { this.echo("Waiting for resources"); imagesuccess = false; });
+	this.waitFor(
+	    function check() {
+		var newurl = this.evaluate(function () { return $("img.detailedViewImg").attr("src"); });
+		var ret = newurl != imageurl;
+		imageurl = newurl;
+		return ret;
+	    }, null, null, LONGWAIT);
+	this.then(function() { this.echo("Waiting for resources"); });
 	this.waitFor(
 	    function check() {
 		return numresourcespending == 0 || atEnd;
 	    }, null, null, LONGWAIT);
-	this.then(function() { this.echo("Image there? " + imagesuccess); });
+	this.then(function() {
+	    this.echo("Image there? " + imagesuccess);
+	    if (imagesuccess) {
+		//this.click("figure.ib-checkmark");
+		downloadsleft = 1;
+		this.click("li.download.detail-download");
+	    } else {
+		this.echo("Image is missing.  Record it and get the thumbnail somehow.");
+	    }
+	    imageurl = null;
+	    imagesuccess = false;
+	});
+	// Wait for the download to happen
+	this.waitFor(function check() {
+	    return (downloadsleft == 0 && numresourcespending == 0) || atEnd;
+	}, null, null, LONGWAIT);
+
+	  
 	this.thenClick("figure.right-nav");
     });
     
@@ -350,12 +370,13 @@ casper.then(function() {
     casper.echo("Looking at my photos.");
     var years = this.getElementsInfo("div.monthbar div.left h2 small").map(function(x) x.text ).filter(onlyUnique);
 
-    // I only care about years between 2002 and 2006
-    //years = years.filter(function(x) x >= 2002 && x <= 2006);
-    //utils.dump(years);
-
     albums = [].concat.apply([], years.map(processYear, this));
 
+    //albums = albums.filter(function(x) { return x[2] === "Bob%20Photo%20CD-1"; });
+
+    // I only care about years between 2002 and 2006
+    //albums = albums.filter(function(x) { return x[1] >= 2002 && x[1] <= 2006; });
+    
     utils.dump(albums);
 	
 });
