@@ -244,93 +244,11 @@ function processAlbum(month, year, caption) {
 	    }
 	});
     }
-    
-    this.waitForSelector("div.scroll_sav_grid");
-    downloadsleft = 42;
-    
-    this.repeat(MAXSCROLLS, function () {
-	this.echo("Scrolling loop");
-	this.waitFor(
-	    function check() {
-		var x = this.evaluate(function () { return $("#bottomLoadingBar").is(":visible"); });
-		return !x;
-	    }, null, null, LONGWAIT);
-	this.waitFor(
-	    function check() {
-		return numresourcespending == 0 || atBottom;
-	    },
-	    function thenf() {
-		if (atBottom) { return; }
-		var vispics = this.getElementsInfo("div.selectable-asset img")
-		    .filter(function(x) { return !(x.attributes.src.includes("base64")); })
-		    .map(function(x) { return x.attributes.id.replace("img_", ""); });
-		// Count the number of pictures, and use this to determine how many downloads to wait for.
-		downloadsleft = Math.floor(vispics.length / 50);
-		this.echo("pics");
-		//utils.dump(vispics);
-		// Get the id, remove img_, and look for the div with that id.
-		// Click div.click-on-asset if id div does not contain selected class
-		vispics.forEach(function(id) {
-		    // utils.dump(this.getElementInfo("div[id=\"" + id + "\"]"));
-		    if (!this.getElementInfo("div[id=\"" + id + "\"]").attributes.class.includes("selected")) {
-			this.echo(id + " is unselected, going to click it");
-			this.click("div[id=\"" + id + "\"] div.click-on-asset");
-		    }
-		}, this);
-     		this.echo("Scrolling...");
-    		atBottom = this.evaluate(function() {
-		    var orig = $("div.scroll_sav_grid").scrollTop();
-		    var height = $("div.scroll_sav_grid").innerHeight();
-		    $("div.scroll_sav_grid").scrollTop(orig + height*3/4);
-		    var newy = $("div.scroll_sav_grid").scrollTop();
-		    console.log("scroll old: " + orig + " new: " + newy);
-		    return orig === newy;
-		});
-	    },
-	    function timeoutf() {
-		this.die("Timed out while scrolling through album");
-	    }, LONGWAIT);
-    });
 
-    // We better be at the bottom!
-    this.then(function() {
-	if (!this.evaluate(function() {
-	    var orig = $("div.scroll_sav_grid").scrollTop();
-	    var height = $("div.scroll_sav_grid").innerHeight();
-	    $("div.scroll_sav_grid").scrollTop(orig + height*3/4);
-	    var newy = $("div.scroll_sav_grid").scrollTop();
-	    console.log("scroll old: " + orig + " new: " + newy);
-	    return orig === newy;
-	})) {
-	    this.die("Failed to scroll to the bottom");
-	}
-    });
-
-    // We've clicked all the pics, time to download.
-    this.wait(1000, function() {
-	this.evaluate(function() { $("#bulkDownload").click(); });
-    });
-
-    this.waitFor(
-	function() {
-	    if (numresourespending == 0 && downloadsleft == 0 && downloadingurls.length == 0) {
-		return true;
-	    } else {
-		this.echo("what " + numresourcespending + " " + downloadsleft + " " + downloadingurls.length);
-	    }
-	},
-	function() {
-	    // Deselect pictures
-	    this.echo("Download finished!");
-	    this.click("span.close_selected_assets");
-	    this.click("a#globalHeaderMyPhotos");
-	    // XXX: This must go outside.
-	    loadMyPhotos();	
-	},
-	function() {
-	    this.die("Download failed");
-	},
-	20*60*1000 /* 20 min */);
+    // Go back to albums
+    this.thenClick("li.close.single");
+    this.thenClick("a#globalHeaderMyPhotos");
+    loadMyPhotos();
 
 };
 
