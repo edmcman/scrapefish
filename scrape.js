@@ -171,7 +171,11 @@ function processAlbum(month, year, caption) {
     this.echo("Processing album " + caption);
 
     dir = year + "/" + month + "/" + caption + "/";
-
+    // slimerjs makeTree is broken. Work around it.
+    fs.makeTree(year);
+    fs.makeTree(year + "/" + month);
+    fs.makeTree(year + "/" + month + "/" + caption);
+    
     this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
 
     var atBottom = false;
@@ -198,13 +202,28 @@ function processAlbum(month, year, caption) {
 		return numresourcespending == 0 || atEnd;
 	    }, null, null, LONGWAIT);
 	this.then(function() {
+	    if (atEnd) return;
 	    this.echo("Image there? " + imagesuccess);
 	    if (imagesuccess) {
 		//this.click("figure.ib-checkmark");
 		downloadsleft = 1;
 		this.click("li.download.detail-download");
 	    } else {
-		this.echo("Image is missing.  Record it and get the thumbnail somehow.");
+		var thumburl = this.evaluate(function() {
+		    var t = $("li.bottom-thumbnail.selected").css("background-image");
+		    // Get rid of the url() wrapper.  Also remove
+		    // height=200 so we get the highest resolution
+		    // image possible, which still isn't great, but is
+		    // better than nothing!
+		    return t.replace('url(','').replace(')','').replace(/\"/gi, "").replace('?height=200','?height=1000');
+		});
+		var thumbfilename = dir + this.evaluate(function() {
+		    return $("li.bottom-thumbnail.selected").attr("id") + ".jpg";
+		});
+		this.echo("Thumbnail url = " + thumburl + " filename = " + thumbfilename);
+		this.download(thumburl, thumbfilename);
+		this.echo("Download done!");
+		downloadsleft = 0;
 	    }
 	    imageurl = null;
 	    imagesuccess = false;
@@ -214,8 +233,18 @@ function processAlbum(month, year, caption) {
 	    return (downloadsleft == 0 && numresourcespending == 0) || atEnd;
 	}, null, null, LONGWAIT);
 
-	  
-	this.thenClick("figure.right-nav");
+	// Are we at the end of the album?
+	this.then(function() {
+	    if (this.evaluate(function() {
+		return $("figure.right-nav").is(":visible");
+	    })) {
+		this.echo("Right arrow is visible...");
+		this.click("figure.right-nav");
+	    } else {
+		this.echo("At the end of the album!");
+		atEnd = true;
+	    }
+	});
     });
     
     this.waitForSelector("div.scroll_sav_grid");
