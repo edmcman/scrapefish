@@ -172,9 +172,9 @@ function processAlbum(month, year, caption) {
 
     dir = year + "/" + month + "/" + caption + "/";
     // slimerjs makeTree is broken. Work around it.
-    fs.makeTree(year);
-    fs.makeTree(year + "/" + month);
-    fs.makeTree(year + "/" + month + "/" + caption);
+    fs.makeDirectory(year);
+    fs.makeDirectory(year + "/" + month);
+    fs.makeDirectory(year + "/" + month + "/" + caption);
     
     this.click('div[presentmonth="' + year + '-' + month + '"] p.storyCaption[o_caption="' + caption + '"]');
 
@@ -191,6 +191,7 @@ function processAlbum(month, year, caption) {
 	this.then(function() { this.echo("Waiting for new url..."); });
 	this.waitFor(
 	    function check() {
+		if (atEnd) { return true; }
 		var newurl = this.evaluate(function () { return $("img.detailedViewImg").attr("src"); });
 		var ret = newurl != imageurl;
 		imageurl = newurl;
@@ -211,11 +212,8 @@ function processAlbum(month, year, caption) {
 	    } else {
 		var thumburl = this.evaluate(function() {
 		    var t = $("li.bottom-thumbnail.selected").css("background-image");
-		    // Get rid of the url() wrapper.  Also remove
-		    // height=200 so we get the highest resolution
-		    // image possible, which still isn't great, but is
-		    // better than nothing!
-		    return t.replace('url(','').replace(')','').replace(/\"/gi, "").replace('?height=200','?height=1000');
+		    // Get rid of the url() wrapper.
+		    return t.replace('url(','').replace(')','').replace(/\"/gi, "");
 		});
 		var thumbfilename = dir + this.evaluate(function() {
 		    return $("li.bottom-thumbnail.selected").attr("id") + ".jpg";
