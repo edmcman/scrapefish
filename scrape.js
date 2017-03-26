@@ -186,7 +186,7 @@ function processAlbum(month, year, caption) {
     this.thenClick('div.magnifying-icon');
     this.waitForSelector("img.detailedViewImg");
 
-    this.repeat(MAXPIX, function () {
+    for (var i = 0; i < MAXPIX; i++) {
 
 	this.then(function() { this.echo("Waiting for new url..."); });
 	this.waitFor(
@@ -243,7 +243,7 @@ function processAlbum(month, year, caption) {
 		atEnd = true;
 	    }
 	});
-    });
+    }
     
     this.waitForSelector("div.scroll_sav_grid");
     downloadsleft = 42;
