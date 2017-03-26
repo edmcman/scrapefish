@@ -296,7 +296,7 @@ function sleep( sleepDuration ){
 
 function loadMyPhotos() {
     // XXX: Scroll to bottom
-    scrollToBottomOfSelector("div#right-well", 10000, 1, false);
+    scrollToBottomOfSelector("div#right-well", 10000, MAXSCROLLS, false);
 };
 
 function onlyUnique(value, index, self) {
