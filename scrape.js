@@ -10,6 +10,9 @@ var casper = require("casper").create({
     logLevel: 'debug',
     silentErrors: false,
     stepTimeout: LONGWAIT,
+    pageSettings: {
+	resourceTimeout: 60*1000 // 1 min
+    },
     viewportSize: {
 	width: 1280,
 	height: 800
@@ -182,9 +185,15 @@ function scrollToBottomOfSelector(selector, wait_ms=30000, max_scrolls=MAXSCROLL
 }
 
 function processAlbum(month, year, caption) {
-    this.echo("Processing album " + caption);
 
     dir = year + "/" + month + "/" + caption + "/";
+
+    if (fs.exists(dir)) {
+	this.echo("Skipping album " + caption + " because it already exists.");
+	return;
+    }
+    this.echo("Processing album " + caption);
+
     // slimerjs makeTree is broken. Work around it.
     fs.makeDirectory(year);
     fs.makeDirectory(year + "/" + month);
