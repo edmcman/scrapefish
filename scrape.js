@@ -64,7 +64,7 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
 	//     casper.navigationRequested = false;
 	//     casper.echo("pendingWait: " + casper.pendingWait + " loadInProgress: " + casper.page.loadInProgress + " init: " + casper.page.browserInitializing)
 	// }
-	var newname = dir + responseData.filename + downloadnum;
+	var newname = dir + responseData.filename + downloadnum++;
 	return newname;
     };
 });
