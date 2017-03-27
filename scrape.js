@@ -1,5 +1,5 @@
 var MAXALBUMS = 30;
-var MAXSCROLLS = 500;
+var MAXSCROLLS = 50;
 var MAXPIX = 500;
 var LONGWAIT = 5*60*1000;
 
@@ -37,6 +37,9 @@ if (!(email && password)) {
 var downloadsleft = null;
 var downloadingurls = [];
 
+// A number to append to downloads to make them have unique filenames
+var downloadnum = null;
+
 // Set by processAlbum
 var dir = null;
  
@@ -56,12 +59,13 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
 	    console.log(downloadingurls);
 	}
 	downloadsleft--;
-	if (downloadsleft == 0) {
-	    casper.echo("Setting navigation requested = false");
-	    casper.navigationRequested = false;
-	    casper.echo("pendingWait: " + casper.pendingWait + " loadInProgress: " + casper.page.loadInProgress + " init: " + casper.page.browserInitializing)
-	}
-	return dir + responseData.filename;
+	// if (downloadsleft == 0) {
+	//     casper.echo("Setting navigation requested = false");
+	//     casper.navigationRequested = false;
+	//     casper.echo("pendingWait: " + casper.pendingWait + " loadInProgress: " + casper.page.loadInProgress + " init: " + casper.page.browserInitializing)
+	// }
+	var newname = dir + responseData.filename + downloadnum;
+	return newname;
     };
 });
 
@@ -80,6 +84,14 @@ if (debug) {
 
     casper.on("step.error", function(step) {
 	this.echo("STEP ERROR");
+    });
+
+    casper.on("load.finished", function(step) {
+	this.echo("LOAD FINISHED");
+    });
+
+    casper.on("load.started", function(step) {
+	this.echo("LOAD STARTED");
     });
 }
 
@@ -140,6 +152,7 @@ casper.on("resource.received", function(resource) {
 	if (downloadingurls.length == 0) {
 	    casper.echo("Setting navigation requested = false");
 	    casper.navigationRequested = false;
+	    casper.page.loadInProgress = false;
 	    casper.echo("pendingWait: " + casper.pendingWait + " loadInProgress: " + casper.page.loadInProgress + " init: " + casper.page.browserInitializing);
 	}
     }
@@ -186,6 +199,7 @@ function scrollToBottomOfSelector(selector, wait_ms=30000, max_scrolls=MAXSCROLL
 
 function processAlbum(month, year, caption) {
 
+    downloadnum = 0;
     dir = year + "/" + month + "/" + caption + "/";
 
     if (fs.exists(dir)) {
