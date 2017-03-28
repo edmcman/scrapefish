@@ -1,4 +1,4 @@
-var MAXALBUMS = 30;
+var MAXALBUMS = 100;
 var MAXSCROLLS = 50;
 var MAXPIX = 500;
 var LONGWAIT = 5*60*1000;
@@ -50,6 +50,7 @@ casper.start('https://www.snapfish.com/photo-gift/loginto', function() {
     }, true);
     this.page.onFileDownloadError = function(err) {
 	console.log("File download error: " + err);
+	throw "File download error";
     };
     this.page.onFileDownload = function(url, responseData) {
 	downloadingurls.push(url);
@@ -352,12 +353,12 @@ casper.then(function() {
 
     albums = [].concat.apply([], years.map(processYear, this));
 
-    //albums = albums.filter(function(x) { return x[2] === "Bob%20Photo%20CD-1"; });
+    //albums = albums.filter(function(x) { return x[2] === "Jocelyn%20Bday%202006"; });
 
     // I only care about years between 2002 and 2006
     //albums = albums.filter(function(x) { return x[1] >= 2002 && x[1] <= 2006; });
     
-    utils.dump(albums);
+    //utils.dump(albums);
 	
 });
 
