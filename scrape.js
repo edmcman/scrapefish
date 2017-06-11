@@ -341,6 +341,10 @@ function onlyUnique(value, index, self) {
 
 var albums = [];
 
+casper.waitFor(
+    function check() {
+	return numresourcespending == 0;
+    }, null, null, LONGWAIT);
 casper.waitForSelector("a#myPhotosBtn", null, null, 10000).then(function() {
     this.echo("Logged in.  Clicking on my photos button now.");
     this.click("a#myPhotosBtn");
