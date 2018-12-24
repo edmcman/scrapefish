@@ -353,7 +353,7 @@ casper.wait(10000);
 loadMyPhotos();
 casper.then(function() {    
     casper.echo("Looking at my photos.");
-    var years = this.getElementsInfo("div.monthbar div.left h2 small").map(function(x) x.text ).filter(onlyUnique);
+    var years = this.getElementsInfo("div.monthbar div.left h2").map(function(x) x.text.split(" ")[1] ).filter(onlyUnique);
 
     albums = [].concat.apply([], years.map(processYear, this));
 
